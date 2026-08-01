@@ -1,0 +1,1271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FarmFleet - Coimbatore Agri-Rental & Marketplace</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #F8F9FA; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 10px; }
+        .hide-section { display: none !important; }
+        .modal-bg { background-color: rgba(0,0,0,0.7); backdrop-filter: blur(8px); }
+        .bg-farm-login { background-image: linear-gradient(135deg, rgba(17, 94, 51, 0.85) 0%, rgba(0, 0, 0, 0.9) 100%), url('https://images.unsplash.com/photo-1586771107445-d3ca888129ff?q=80&w=2000'); background-size: cover; background-position: center; }
+        .bg-farm-role { background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.6), rgba(248, 249, 250, 1)), url('https://images.unsplash.com/photo-1500382017468-9049fed747ef?q=80&w=2000'); background-size: cover; background-position: center; }
+        .bg-pattern { background-image: radial-gradient(#CBD5E1 1px, transparent 1px); background-size: 24px 24px; }
+        .glass-panel { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(16px); box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.5); }
+        .toast-enter { transform: translateY(100%); opacity: 0; }
+        .toast-active { transform: translateY(0); opacity: 1; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .toggle-btn.active { background-color: #115E33; color: white; border-color: #115E33; }
+        .toggle-btn.inactive { background-color: white; color: #6B7280; border-color: #E5E7EB; }
+        
+        /* Admin Dark Theme Utilities */
+        .admin-bg { background-color: #121418; }
+        .admin-card { background-color: #1A1D24; border: 1px solid #2A2E39; }
+        .admin-text-glow { text-shadow: 0 0 10px rgba(6, 182, 212, 0.5); }
+        
+        /* Google Maps Container Overrides */
+        #owner-map-container, #admin-map-container, #modal-single-map { width: 100%; height: 100%; min-height: 400px; border-radius: 1rem; }
+    </style>
+</head>
+<body class="text-gray-800 h-screen overflow-hidden flex flex-col">
+
+    <div id="toast-container" class="fixed bottom-8 right-8 z-[100] flex flex-col gap-3"></div>
+
+    <!-- 1. LOGIN SECTION -->
+    <div id="section-login" class="h-full flex items-center justify-center bg-farm-login absolute inset-0 z-50">
+        <div class="glass-panel p-10 rounded-[2rem] max-w-md w-full relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-[#34d399] to-[#047857]"></div>
+            <div class="text-center mb-8 mt-2">
+                <div class="bg-[#115E33] text-white w-16 h-16 rounded-2xl flex items-center justify-center text-3xl shadow-lg mx-auto mb-4">🌾</div>
+                <h1 class="text-4xl font-extrabold text-gray-900 tracking-tight" data-en="FarmFleet Coimbatore" data-ta="பார்ம்ஃப்ளீட் கோயம்புத்தூர்">FarmFleet Coimbatore</h1>
+                <p class="text-[#115E33] mt-2 font-extrabold uppercase tracking-widest text-[10px] bg-green-100/50 inline-block px-3 py-1 rounded-full">Agri-Rental & Marketplace</p>
+            </div>
+            <form onsubmit="return false;" class="space-y-5">
+                <div>
+                    <label class="block text-xs font-extrabold uppercase text-gray-500 mb-1.5" data-en="Full Name" data-ta="முழு பெயர்">Full Name</label>
+                    <input type="text" id="userName" placeholder="e.g., Ramesh Kumar" class="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#115E33] outline-none font-semibold text-gray-900" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-extrabold uppercase text-gray-500 mb-1.5" data-en="Mobile Number" data-ta="மொபைல் எண்">Mobile Number</label>
+                    <input type="text" id="userPhone" placeholder="Mobile Number" class="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#115E33] outline-none font-semibold text-gray-900" required>
+                </div>
+                <button type="button" onclick="handleLogin()" class="w-full bg-[#115E33] text-white font-extrabold py-4 rounded-xl mt-4 hover:bg-green-800 transition-all text-lg flex justify-center items-center gap-2 shadow-lg" data-en="Secure Login ➔" data-ta="உள்நுழைய ➔">Secure Login ➔</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 2. ROLE SELECTION SECTION -->
+    <div id="section-role" class="h-full flex flex-col items-center justify-center bg-farm-role hide-section p-6 absolute inset-0 z-40">
+        <div class="text-center mb-12 relative z-10">
+            <h2 class="text-5xl font-extrabold text-gray-900 drop-shadow-sm"><span data-en="Welcome," data-ta="வரவேற்பு,">Welcome,</span> <span id="display-name" class="text-[#115E33]">User</span>!</h2>
+            <p class="text-gray-700 mt-4 text-xl font-bold bg-white/50 px-6 py-2 rounded-full backdrop-blur-sm shadow-sm" data-en="Select workspace to continue." data-ta="தொடர உங்கள் பணியிடத்தை தேர்ந்தெடுக்கவும்.">Select workspace to continue.</p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl w-full relative z-10 mb-8">
+            <div onclick="selectRole('farmer')" class="glass-panel p-12 rounded-[2.5rem] border-[3px] border-white/60 hover:border-[#115E33] cursor-pointer transition-all transform hover:-translate-y-2 text-center group">
+                <div class="text-[5rem] mb-6 group-hover:scale-110 transition-transform drop-shadow-md">🚜</div>
+                <h3 class="text-3xl font-extrabold text-gray-900" data-en="Farmer Portal" data-ta="விவசாயி தளம்">Farmer Portal</h3>
+                <p class="text-gray-600 mt-4 font-semibold px-4 text-sm" data-en="Rent/buy machinery, view active bookings." data-ta="இயந்திரங்களை வாடகைக்கு அல்லது விலைக்கு வாங்குங்கள்.">Rent/buy machinery, view active bookings.</p>
+                <button class="mt-8 bg-[#115E33] text-white px-8 py-4 rounded-xl font-extrabold w-full text-base shadow-lg" data-en="Enter Farmer Portal" data-ta="உள்ளே நுழைய">Enter Farmer Portal</button>
+            </div>
+            <div onclick="selectRole('owner')" class="glass-panel p-12 rounded-[2.5rem] border-[3px] border-white/60 hover:border-gray-900 cursor-pointer transition-all transform hover:-translate-y-2 text-center group">
+                <div class="text-[5rem] mb-6 group-hover:scale-110 transition-transform drop-shadow-md">📊</div>
+                <h3 class="text-3xl font-extrabold text-gray-900" data-en="Owner Portal" data-ta="உரிமையாளர் தளம்">Owner Portal</h3>
+                <p class="text-gray-600 mt-4 font-semibold px-4 text-sm" data-en="Manage fleet, view maps, track earnings." data-ta="வாகனங்களை நிர்வகிக்கவும், ஜிபிஎஸ் கண்காணிக்கவும்.">Manage fleet, view maps, track earnings.</p>
+                <button class="mt-8 bg-gray-900 text-white px-8 py-4 rounded-xl font-extrabold w-full text-base shadow-lg" data-en="Enter Owner Portal" data-ta="உள்ளே நுழைய">Enter Owner Portal</button>
+            </div>
+        </div>
+        
+        <div class="relative z-10 text-center">
+            <button onclick="promptAdminPin()" class="text-gray-500 font-extrabold hover:text-gray-900 bg-white/60 px-4 py-2 rounded-lg backdrop-blur-sm transition flex items-center gap-2 mx-auto shadow-sm text-sm">
+                🔒 Admin Access
+            </button>
+        </div>
+    </div>
+
+    <!-- ADMIN PIN MODAL -->
+    <div id="admin-pin-modal" class="fixed inset-0 modal-bg z-50 flex items-center justify-center hide-section p-4 backdrop-blur-md">
+        <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-sm w-full text-center">
+            <div class="text-4xl mb-4">🔐</div>
+            <h3 class="text-2xl font-extrabold text-gray-900 mb-2">Super Admin</h3>
+            <p class="text-sm text-gray-500 font-bold mb-6">Enter PIN to access the main system.</p>
+            <input type="password" id="admin-pin-input" placeholder="Enter PIN (Demo: 0000)" class="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl font-extrabold text-center tracking-[0.5em] text-xl outline-none focus:border-[#115E33] mb-4">
+            <div class="flex gap-3">
+                <button onclick="closeAdminPin()" class="flex-1 bg-gray-100 text-gray-600 font-extrabold py-3 rounded-xl hover:bg-gray-200">Cancel</button>
+                <button onclick="verifyAdminPin()" class="flex-1 bg-gray-900 text-white font-extrabold py-3 rounded-xl hover:bg-black shadow-lg">Unlock</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- SUPER ADMIN DASHBOARD (FULLY ACCESSIBLE)   -->
+    <!-- ========================================== -->
+    <div id="section-admin" class="h-full flex flex-col hide-section admin-bg overflow-y-auto text-gray-200 relative z-50">
+        <header class="border-b border-[#2A2E39] px-8 py-5 flex justify-between items-center sticky top-0 bg-[#121418]/90 backdrop-blur z-20">
+            <h1 class="text-2xl font-extrabold text-white tracking-tight flex items-center gap-2">⚙️ FarmFleet System Admin</h1>
+            <div class="flex items-center gap-4">
+                <button onclick="switchRoleToSelect()" class="bg-[#1A1D24] border border-[#2A2E39] text-gray-300 font-bold px-4 py-2 rounded-lg hover:bg-gray-800 text-sm transition">Switch Role</button>
+                <button onclick="logout()" class="text-red-400 font-bold bg-red-900/20 px-4 py-2 rounded-lg hover:bg-red-900/40 text-sm transition">Logout</button>
+            </div>
+        </header>
+
+        <main class="p-8 max-w-[1400px] mx-auto w-full space-y-6">
+            <!-- Admin Navigation -->
+            <div class="flex gap-4 border-b border-[#2A2E39] pb-4">
+                <button onclick="switchAdminTab('dashboard')" class="bg-cyan-900/30 text-cyan-400 border border-cyan-900/50 px-6 py-2 rounded-xl font-extrabold text-sm transition hover:bg-cyan-900/50">Dashboard</button>
+                <button onclick="switchAdminTab('fleet')" class="bg-[#1A1D24] border border-[#2A2E39] text-gray-400 px-6 py-2 rounded-xl font-extrabold text-sm hover:text-white transition">Fleet List</button>
+                <button onclick="switchAdminTab('map')" class="bg-[#1A1D24] border border-[#2A2E39] text-gray-400 px-6 py-2 rounded-xl font-extrabold text-sm hover:text-white transition">Live Map View</button>
+            </div>
+
+            <!-- Admin Tabs -->
+            <div id="admin-tab-dashboard">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <div class="admin-card rounded-2xl p-6 relative overflow-hidden group">
+                        <div class="absolute top-0 left-0 w-1 h-full bg-green-500 shadow-[0_0_15px_#22c55e]"></div>
+                        <div class="flex justify-between items-start mb-4"><p class="text-xs font-bold text-gray-400">Total Revenue</p><span class="text-green-500">📈</span></div>
+                        <h3 class="text-3xl font-extrabold text-white tracking-tight" id="admin-revenue-display">₹0</h3>
+                    </div>
+                    <div class="admin-card rounded-2xl p-6">
+                        <div class="flex justify-between items-start mb-4"><p class="text-xs font-bold text-gray-400">Active Rentals</p><span class="text-cyan-400 text-lg">🚜</span></div>
+                        <div class="flex justify-between items-end"><h3 class="text-3xl font-extrabold text-white tracking-tight" id="admin-rentals-display">0</h3><span class="text-[10px] uppercase tracking-widest font-extrabold text-cyan-400 admin-text-glow">Live Now</span></div>
+                    </div>
+                    <div class="admin-card rounded-2xl p-6">
+                        <div class="flex justify-between items-start mb-4"><p class="text-xs font-bold text-gray-400">Pending Approvals</p><span class="text-orange-400 text-lg">📋</span></div>
+                        <div class="flex justify-between items-end"><h3 class="text-3xl font-extrabold text-white tracking-tight" id="admin-pending-display">0</h3><span class="text-[10px] uppercase tracking-widest font-extrabold text-orange-400 bg-orange-400/10 px-2 py-1 rounded">Urgent</span></div>
+                    </div>
+                    <div class="admin-card rounded-2xl p-6">
+                        <div class="flex justify-between items-start mb-4"><p class="text-xs font-bold text-gray-400">Active Disputes</p><span class="text-red-400 text-lg">⚠️</span></div>
+                        <div class="flex justify-between items-end"><h3 class="text-3xl font-extrabold text-white tracking-tight" id="admin-disputes-display">0</h3><span class="text-[10px] uppercase tracking-widest font-extrabold text-red-400 bg-red-400/10 px-2 py-1 rounded">Action Required</span></div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+                    <div class="admin-card rounded-2xl p-6 col-span-2 relative">
+                        <div class="flex justify-between items-start mb-6">
+                            <div><h3 class="text-xl font-extrabold text-white">Revenue Analytics</h3><p class="text-xs text-gray-400 mt-1">Weekly Commission Revenue</p></div>
+                            <div class="flex bg-[#121418] rounded-lg p-1 border border-[#2A2E39]">
+                                <button id="btn-chart-daily" onclick="toggleAdminChart('daily')" class="px-4 py-1.5 text-xs font-bold text-gray-400 hover:text-white rounded">Daily</button>
+                                <button id="btn-chart-weekly" onclick="toggleAdminChart('weekly')" class="px-4 py-1.5 text-xs font-bold bg-cyan-400 text-black rounded shadow-[0_0_10px_rgba(6,182,212,0.4)]">Weekly</button>
+                            </div>
+                        </div>
+                        <div class="h-64 w-full relative"><canvas id="adminRevenueChart"></canvas></div>
+                    </div>
+                    <div class="admin-card rounded-2xl p-6 flex flex-col h-full">
+                        <h3 class="text-xl font-extrabold text-white mb-1">Action Center</h3><p class="text-xs text-gray-400 mb-6">Prioritized Task Queue</p>
+                        <div class="space-y-4 flex-1 overflow-y-auto max-h-64" id="admin-action-center"></div>
+                        <button onclick="showToast('Loading full activity log...', 'info')" class="w-full mt-4 bg-[#2A2E39] text-gray-300 hover:text-white font-bold py-3 rounded-xl text-sm transition">View All Activity</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="admin-tab-fleet" class="hide-section admin-card rounded-2xl p-6 overflow-hidden">
+                <div class="flex justify-between items-center mb-6">
+                    <div><h3 class="text-xl font-extrabold text-white">Global Equipment Database</h3><p class="text-xs text-gray-400 mt-1">All registered fleet additions</p></div>
+                    <button onclick="openAddFleetModal()" class="bg-cyan-400 text-black px-4 py-2 rounded-lg font-bold text-sm shadow-[0_0_15px_rgba(6,182,212,0.3)] hover:bg-cyan-300 transition">+ Manual Add</button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm whitespace-nowrap">
+                        <thead class="text-gray-500 font-bold text-xs border-b border-[#2A2E39]">
+                            <tr><th class="pb-4">Owner</th><th class="pb-4">Type</th><th class="pb-4">Location</th><th class="pb-4">GPS Live</th><th class="pb-4">Status</th><th class="pb-4 text-center">Action</th></tr>
+                        </thead>
+                        <tbody class="divide-y divide-[#2A2E39]" id="admin-equipment-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="admin-tab-map" class="hide-section admin-card rounded-2xl p-6 h-[600px] relative">
+                <div class="absolute top-6 left-6 z-10 bg-[#121418]/90 backdrop-blur p-4 rounded-2xl border border-[#2A2E39]">
+                    <h4 class="font-extrabold text-white mb-2">Global Live Map</h4>
+                    <div class="flex items-center gap-4 text-xs font-bold text-gray-400">
+                        <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-green-500"></span> Idle</span>
+                        <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-orange-500"></span> Working</span>
+                        <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-red-500"></span> Broken</span>
+                    </div>
+                </div>
+                <!-- REAL GOOGLE MAP CONTAINER FOR ADMIN -->
+                <div id="admin-map-container" class="w-full h-full bg-[#1A1D24] rounded-xl flex items-center justify-center text-gray-500">
+                    Loading Google Maps API...
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- 3. FARMER DASHBOARD                        -->
+    <!-- ========================================== -->
+    <div id="section-farmer" class="h-full flex flex-col hide-section bg-gray-50 bg-pattern w-full absolute inset-0 z-30">
+        <header class="border-b border-gray-200 px-6 py-4 flex items-center justify-between bg-white shrink-0 shadow-sm z-20">
+            <div class="flex items-center gap-6 w-full max-w-5xl">
+                <h1 class="text-3xl font-extrabold text-[#115E33] tracking-tight cursor-pointer flex items-center gap-2" onclick="switchRoleToSelect()">🌾 FarmFleet</h1>
+                <div class="flex items-center bg-green-50 border border-green-200 px-4 py-2 rounded-xl text-xs font-bold text-[#115E33] shrink-0 shadow-inner">
+                    <span class="mr-1">📍</span> <span data-en="My Field Location:" data-ta="எனது இடம்:">My Field Location:</span>
+                    <input type="text" id="farmer-loc-input" value="Thondamuthur, Coimbatore" onchange="updateFarmerLocation(this.value)" class="bg-transparent font-extrabold text-gray-900 border-b border-[#115E33] px-1 ml-2 outline-none w-56">
+                </div>
+                <div class="relative flex-1 hidden lg:block">
+                    <span class="absolute left-4 top-3 text-gray-400 text-lg">🔍</span>
+                    <input type="text" id="searchInput" oninput="renderEquipment()" placeholder="Search 'Farmtrac', 'Drone'..." class="w-full bg-gray-100 border border-transparent rounded-xl py-2.5 pl-12 pr-4 focus:bg-white focus:border-[#115E33] outline-none font-bold text-gray-700 text-sm">
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <button onclick="openFarmerBookings()" class="bg-blue-50 text-blue-700 px-4 py-2 rounded-xl text-sm font-extrabold hover:bg-blue-100 border border-blue-100 shadow-sm flex items-center gap-2" data-en="📦 My Bookings" data-ta="📦 எனது பதிவுகள்">
+                    📦 My Bookings <span id="farmer-bookings-badge" class="bg-blue-600 text-white px-2 py-0.5 rounded-full text-[10px]">0</span>
+                </button>
+                <button onclick="toggleTamil()" id="lang-btn" class="bg-green-50 text-[#115E33] px-4 py-2 rounded-xl text-sm font-extrabold hover:bg-green-100 border border-green-100">தமிழ்</button>
+                <button onclick="switchRoleToSelect()" class="bg-gray-100 text-gray-700 font-extrabold px-4 py-2 rounded-xl hover:bg-gray-200 text-sm" data-en="Switch Role" data-ta="பங்கை மாற்று">Switch</button>
+            </div>
+        </header>
+
+        <div class="bg-white px-8 py-3.5 border-b border-gray-100 flex justify-between items-center shadow-sm z-10 shrink-0">
+            <div class="flex bg-gray-100 p-1 rounded-xl border border-gray-200 shadow-inner">
+                <button onclick="setMarketMode('rent')" id="mode-btn-rent" class="toggle-btn active px-8 py-2 rounded-lg font-extrabold text-sm transition-all" data-en="🚜 Rent Machinery" data-ta="🚜 வாடகைக்கு">🚜 Rent Machinery</button>
+                <button onclick="setMarketMode('sell')" id="mode-btn-sell" class="toggle-btn inactive px-8 py-2 rounded-lg font-extrabold text-sm transition-all" data-en="🛒 Buy Equipment" data-ta="🛒 விலைக்கு வாங்கு">🛒 Buy Equipment</button>
+            </div>
+            <p class="text-sm font-extrabold text-[#115E33] bg-green-50 px-4 py-1.5 rounded-lg border border-green-100 hidden md:block" id="count-summary">Showing 40 Vehicles</p>
+        </div>
+
+        <div class="px-6 py-3 border-b border-gray-200 flex gap-3 overflow-x-auto shrink-0 bg-white z-10" id="category-buttons"></div>
+
+        <div class="flex flex-1 overflow-hidden">
+            <aside class="w-[280px] border-r border-gray-200 p-6 overflow-y-auto hidden md:block bg-white shadow-xl z-10">
+                <h3 class="font-extrabold text-base mb-6 text-gray-900" data-en="Search Filters" data-ta="தேடல் வடிப்பான்கள்">Search Filters</h3>
+                <div class="mb-8 bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                    <label class="text-xs font-extrabold uppercase tracking-wide text-gray-500 block mb-2" data-en="Search Radius" data-ta="சுற்றளவு">Search Radius</label>
+                    <div class="flex justify-between text-xl mb-3 text-[#115E33] font-extrabold"><span id="radius-val">100 km</span></div>
+                    <input type="range" id="radiusSlider" min="5" max="150" value="100" oninput="updateRadius(this.value)" class="w-full accent-[#115E33] cursor-pointer h-2 bg-gray-200 rounded-lg appearance-none">
+                </div>
+                <div class="mb-8" id="operator-filter-container">
+                    <label class="text-xs font-extrabold uppercase tracking-wide text-gray-500 block mb-3 px-1" data-en="Operator Requirement" data-ta="ஓட்டுநர் தேவை">Operator Requirement</label>
+                    <div class="space-y-2">
+                        <label class="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-xl cursor-pointer hover:border-[#115E33]"><input type="radio" name="operator" value="all" checked onchange="updateOperatorFilter(this.value)" class="accent-[#115E33]"><span class="text-xs font-extrabold text-gray-700" data-en="Any" data-ta="அனைத்தும்">Any</span></label>
+                        <label class="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-xl cursor-pointer hover:border-[#115E33]"><input type="radio" name="operator" value="driver" onchange="updateOperatorFilter(this.value)" class="accent-[#115E33]"><span class="text-xs font-extrabold text-gray-700" data-en="With Driver/Pilot" data-ta="ஓட்டுநருடன்">With Driver/Pilot</span></label>
+                        <label class="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-xl cursor-pointer hover:border-[#115E33]"><input type="radio" name="operator" value="self" onchange="updateOperatorFilter(this.value)" class="accent-[#115E33]"><span class="text-xs font-extrabold text-gray-700" data-en="Self-Drive" data-ta="சுய-ஓட்டுநர்">Self-Drive</span></label>
+                    </div>
+                </div>
+            </aside>
+            <main class="flex-1 p-8 overflow-y-auto">
+                <div id="equipment-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 pb-20"></div>
+            </main>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- 4. OWNER DASHBOARD                         -->
+    <!-- ========================================== -->
+    <div id="section-owner" class="h-full flex hide-section bg-[#F8F9FA] bg-pattern absolute inset-0 z-30">
+        <aside class="w-72 bg-gray-900 text-white flex flex-col justify-between hidden md:flex shrink-0 shadow-2xl z-20">
+            <div>
+                <div class="h-20 flex items-center px-8 border-b border-gray-800 cursor-pointer hover:bg-gray-800 transition" onclick="switchRoleToSelect()">
+                    <span class="text-2xl font-extrabold tracking-tight flex items-center gap-3" data-en="🌾 FarmFleet" data-ta="🌾 பார்ம்ஃப்ளீட்">🌾 FarmFleet</span>
+                </div>
+                <nav class="p-5 space-y-3 mt-4">
+                    <button onclick="switchOwnerTab('dashboard')" id="owner-tab-btn-dashboard" class="w-full flex items-center gap-4 px-6 py-4 bg-gradient-to-r from-[#115E33] to-[#047857] text-white rounded-2xl font-extrabold shadow-lg">📊 Dashboard</button>
+                    <button onclick="switchOwnerTab('fleet')" id="owner-tab-btn-fleet" class="w-full flex items-center gap-4 px-6 py-4 text-gray-400 hover:text-white hover:bg-gray-800 rounded-2xl font-extrabold">🚜 Fleet Directory</button>
+                    <button onclick="switchOwnerTab('map')" id="owner-tab-btn-map" class="w-full flex items-center gap-4 px-6 py-4 text-gray-400 hover:text-white hover:bg-gray-800 rounded-2xl font-extrabold">🗺️ Live Map</button>
+                </nav>
+            </div>
+            <div class="p-6 border-t border-gray-800">
+                <button onclick="switchRoleToSelect()" class="w-full bg-gray-800 text-gray-300 font-extrabold py-3.5 rounded-xl hover:bg-gray-700 text-sm mb-3">Switch Workspace</button>
+                <button onclick="logout()" class="w-full bg-red-500/20 text-red-500 font-extrabold py-3.5 rounded-xl hover:bg-red-500 hover:text-white text-sm">Logout</button>
+            </div>
+        </aside>
+        
+        <main class="flex-1 flex flex-col overflow-hidden z-10">
+            <header class="h-20 bg-white border-b border-gray-200 flex items-center justify-between px-10 shrink-0 shadow-sm z-10">
+                <h2 id="owner-page-title" class="text-2xl font-extrabold text-gray-900">Dashboard Overview</h2>
+                <div class="flex items-center gap-6">
+                    <button onclick="openAddFleetModal()" class="bg-[#115E33] text-white px-6 py-3 rounded-xl font-extrabold text-sm hover:bg-green-800 shadow-lg flex items-center gap-2">
+                        <span class="text-lg leading-none">+</span> <span data-en="List Equipment" data-ta="புதியதை பட்டியலிடு">List Equipment</span>
+                    </button>
+                    <div class="text-right pl-6 border-l border-gray-200">
+                        <p id="owner-name-display" class="text-sm font-extrabold text-gray-900">Owner</p>
+                    </div>
+                </div>
+            </header>
+
+            <div class="flex-1 overflow-y-auto p-10 pb-20 relative">
+                
+                <div id="owner-tab-dashboard">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
+                        <div class="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm relative overflow-hidden">
+                            <p class="text-xs font-extrabold text-gray-400 uppercase tracking-widest mb-3">Total Earnings (Monthly)</p>
+                            <h3 class="text-4xl font-extrabold text-gray-900" id="owner-earnings-display">₹1,85,000</h3>
+                        </div>
+                        <div class="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm relative overflow-hidden">
+                            <p class="text-xs font-extrabold text-gray-400 uppercase tracking-widest mb-3">Total Fleet Count</p>
+                            <h3 class="text-4xl font-extrabold text-[#115E33]" id="owner-fleet-count">40</h3>
+                        </div>
+                        <div class="bg-white p-8 rounded-[2rem] border border-blue-100 shadow-sm cursor-pointer hover:shadow-lg transition" onclick="switchOwnerTab('fleet')">
+                            <p class="text-xs font-extrabold text-blue-500 uppercase tracking-widest mb-3">Active Jobs</p>
+                            <h3 class="text-4xl font-extrabold text-gray-900"><span id="owner-jobs-count">0</span></h3>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden p-10">
+                        <h3 class="font-extrabold text-2xl mb-8 text-gray-900">Customer Bookings & Requests</h3>
+                        <div id="owner-requests-container" class="space-y-4"></div>
+                    </div>
+                </div>
+
+                <div id="owner-tab-fleet" class="hide-section bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden">
+                    <div class="p-8 border-b border-gray-100 bg-white">
+                        <h3 class="font-extrabold text-2xl text-gray-900">Live Fleet Directory</h3>
+                    </div>
+                    <div class="overflow-x-auto p-4">
+                        <table class="w-full text-left text-sm whitespace-nowrap">
+                            <thead class="bg-gray-50 text-gray-400 font-extrabold uppercase text-[10px] tracking-wider">
+                                <tr>
+                                    <th class="px-6 py-4 rounded-l-xl">Equipment Details</th>
+                                    <th class="px-6 py-4">Status & Actions</th>
+                                    <th class="px-6 py-4">Customer Details</th>
+                                    <th class="px-6 py-4 text-right rounded-r-xl">Pricing</th>
+                                </tr>
+                            </thead>
+                            <tbody id="owner-fleet-tbody" class="divide-y divide-gray-50 font-medium text-gray-700"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="owner-tab-map" class="hide-section bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden h-[600px] relative">
+                    <div class="absolute top-6 left-6 z-10 bg-white/90 backdrop-blur p-4 rounded-2xl shadow-lg border border-gray-200">
+                        <h4 class="font-extrabold text-gray-900 mb-2">Fleet Map (Coimbatore)</h4>
+                        <div class="flex items-center gap-4 text-xs font-bold">
+                            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-green-500"></span> Idle</span>
+                            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-orange-500"></span> Working</span>
+                            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-red-500"></span> Broken</span>
+                        </div>
+                    </div>
+                    <!-- REAL GOOGLE MAP CONTAINER FOR OWNER -->
+                    <div id="owner-map-container" class="w-full h-full bg-gray-100 flex items-center justify-center text-gray-500 font-bold">
+                        Loading Google Maps API...
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- FARMER ACTIVE BOOKINGS MODAL -->
+    <div id="farmer-bookings-modal" class="fixed inset-0 modal-bg z-50 flex items-center justify-center hide-section p-4 backdrop-blur-md">
+        <div class="bg-white rounded-[2.5rem] shadow-2xl max-w-3xl w-full overflow-hidden border border-white/20 my-8 max-h-[90vh] flex flex-col">
+            <div class="bg-blue-600 p-8 text-white relative shrink-0">
+                <button onclick="document.getElementById('farmer-bookings-modal').classList.add('hide-section');" class="absolute top-6 right-6 text-white hover:bg-white/20 font-bold text-2xl w-10 h-10 rounded-full transition bg-black/20">✕</button>
+                <h3 class="text-3xl font-extrabold" data-en="My Active Bookings" data-ta="எனது பதிவுகள்">My Active Bookings</h3>
+                <p class="text-blue-200 font-bold mt-1 text-sm">Track status and notifications</p>
+            </div>
+            <div class="p-8 bg-gray-50 overflow-y-auto flex-1 space-y-6" id="farmer-bookings-list"></div>
+        </div>
+    </div>
+
+
+    <!-- MULTI-STEP BOOKING & KYC MODAL -->
+    <div id="booking-modal" class="fixed inset-0 modal-bg z-50 flex items-center justify-center hide-section p-4 backdrop-blur-md">
+        <div class="bg-white rounded-[2.5rem] shadow-2xl max-w-4xl w-full overflow-hidden border border-white/20 my-8 max-h-[95vh] flex flex-col">
+            
+            <div class="h-48 w-full bg-gray-200 relative shrink-0">
+                <img id="modal-img" src="" class="w-full h-full object-cover" onerror="this.onerror=null; this.src='image_cdc718.jpg';">
+                <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
+                <button onclick="closeBookingModal()" class="absolute top-4 right-4 text-white hover:bg-white/20 font-bold text-2xl w-10 h-10 rounded-full flex items-center justify-center transition backdrop-blur-md bg-black/40 z-10">✕</button>
+                <div class="absolute bottom-6 left-8 pr-6">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span id="modal-cat-badge" class="bg-white/20 text-white text-xs font-extrabold uppercase px-3 py-1 rounded backdrop-blur border border-white/30">Category</span>
+                        <span id="modal-operator-badge" class="bg-green-500 text-white text-xs font-extrabold uppercase px-3 py-1 rounded shadow-md">Driver Included</span>
+                    </div>
+                    <h3 class="text-3xl font-extrabold text-white leading-tight" id="modal-title">Equipment Name</h3>
+                </div>
+            </div>
+            
+            <!-- STEP 1: Details -->
+            <div id="booking-step-1" class="p-8 bg-gray-50 overflow-y-auto space-y-8 flex-1 grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+                <div class="space-y-6">
+                    <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+                        <div class="flex items-center justify-between mb-4 pb-4 border-b border-gray-50">
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 bg-green-100 text-[#115E33] font-extrabold rounded-full flex items-center justify-center text-xl shadow-inner shrink-0">👤</div>
+                                <div>
+                                    <h5 class="font-extrabold text-gray-900 text-base" id="modal-owner-name">Owner Name</h5>
+                                    <p class="text-xs text-gray-500 font-bold mt-1" id="modal-owner-phone">📞 Phone</p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <div class="flex items-center gap-1 text-amber-500 font-extrabold text-lg justify-end"><span>⭐</span> <span id="modal-owner-rating">4.9</span></div>
+                            </div>
+                        </div>
+                        <div class="bg-amber-50/50 border border-amber-100 p-4 rounded-xl text-xs text-amber-900 font-medium italic relative">
+                            "<span id="modal-owner-review-text" class="relative z-10">Review</span>"
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+                        <h5 class="text-xs font-extrabold text-gray-400 uppercase tracking-widest mb-4">10 Specifications</h5>
+                        <div id="modal-specs-grid" class="grid grid-cols-1 gap-2 text-xs font-bold text-gray-700"></div>
+                    </div>
+                </div>
+
+                <div class="space-y-6">
+                    <div id="telematics-container" class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm space-y-3">
+                        <h5 class="text-xs font-extrabold text-gray-400 uppercase tracking-widest">Live Status</h5>
+                        <div class="flex justify-between items-center"><span class="text-xs font-bold text-gray-500">Work Status:</span><span id="modal-field-work-status" class="text-xs font-extrabold px-3 py-1 rounded-full">Status</span></div>
+                        <div class="flex justify-between items-center"><span class="text-xs font-bold text-gray-500">Field Exit:</span><span id="modal-exit-time" class="text-xs font-extrabold text-gray-900">Time</span></div>
+                        <div class="flex justify-between items-center pt-2 border-t border-gray-50"><span class="text-xs font-bold text-gray-500">ETA to You:</span><span id="modal-eta" class="text-sm font-extrabold text-[#115E33]">ETA</span></div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm space-y-4">
+                        <h5 class="text-xs font-extrabold text-gray-400 uppercase tracking-widest" id="modal-breakdown-title">Price Breakdown</h5>
+                        <div class="space-y-3 font-bold text-gray-700 text-sm">
+                            <div class="flex justify-between items-center"><span id="modal-base-label">Base Rate</span><span id="modal-base-rate-display" class="text-base text-gray-900 font-extrabold">₹0</span></div>
+                            <div id="duration-container" class="flex justify-between items-center bg-gray-50 p-2 rounded-xl border border-gray-200">
+                                <span id="duration-label" class="text-xs font-extrabold text-gray-600 uppercase tracking-wider ml-2">Duration</span>
+                                <input type="number" id="booking-duration" min="1" value="1" oninput="calculateTotal()" class="w-16 p-2 bg-white border border-gray-300 rounded-lg text-center font-extrabold text-gray-900 outline-none">
+                            </div>
+                            <div id="transit-fee-container" class="flex justify-between items-center text-xs text-blue-900 bg-blue-50 p-3 rounded-xl border border-blue-100">
+                                <div><span class="block text-[10px] uppercase opacity-80 mb-1">Transit Charges</span>🚛 <span id="modal-distance-text">12 km</span> @ ₹20/km</div>
+                                <span id="modal-transit-fee" class="font-extrabold text-base">₹240</span>
+                            </div>
+                            <div class="flex justify-between items-center pt-2 border-t border-gray-50"><span class="text-xs text-gray-500">Platform Fee (5%)</span><span id="modal-commission" class="text-gray-900 font-extrabold">₹0</span></div>
+                        </div>
+                        <div class="flex justify-between items-end pt-3 border-t border-gray-100"><span class="font-extrabold text-gray-400 text-xs uppercase tracking-widest">Total Payable</span><span id="modal-total" class="font-extrabold text-3xl text-[#115E33]">₹0</span></div>
+                        
+                        <button onclick="goToStep(2)" id="modal-btn-next-kyc" class="w-full bg-[#115E33] text-white font-extrabold py-4 rounded-xl mt-4 hover:bg-green-800 transition text-sm shadow-lg uppercase tracking-wide">Proceed to Identity Verification ➔</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP 2: KYC -->
+            <div id="booking-step-2" class="p-8 bg-gray-50 flex-1 hide-section flex items-center justify-center">
+                <div class="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm max-w-md w-full space-y-6">
+                    <div class="text-center">
+                        <div class="text-4xl mb-3">🛡️</div>
+                        <h4 class="font-extrabold text-xl text-gray-900">Identity Verification</h4>
+                        <p class="text-xs text-gray-500 font-bold mt-1">Required to secure high-value machinery.</p>
+                    </div>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-extrabold uppercase text-gray-500 mb-1">Aadhaar Number (Demo)</label>
+                            <input type="text" id="kyc-id" placeholder="Enter 12-digit Aadhaar" class="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl font-bold text-center tracking-widest outline-none focus:ring-2 focus:ring-[#115E33]">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-extrabold uppercase text-gray-500 mb-1">OTP Pin (Use 1234 for Demo)</label>
+                            <input type="password" id="kyc-otp" placeholder="* * * *" class="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl font-bold text-center tracking-widest outline-none focus:ring-2 focus:ring-[#115E33]">
+                        </div>
+                    </div>
+                    <div class="flex gap-3 pt-4">
+                        <button onclick="goToStep(1)" class="w-1/3 bg-gray-100 text-gray-600 font-extrabold py-3 rounded-xl hover:bg-gray-200">Back</button>
+                        <button onclick="verifyKYC()" class="w-2/3 bg-blue-600 text-white font-extrabold py-3 rounded-xl hover:bg-blue-700 shadow-md">Verify & Proceed</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP 3: PAYMENT -->
+            <div id="booking-step-3" class="p-8 bg-gray-50 flex-1 hide-section flex items-center justify-center">
+                <div class="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm max-w-lg w-full space-y-6">
+                    <div class="text-center">
+                        <div class="text-4xl mb-3">💳</div>
+                        <h4 class="font-extrabold text-xl text-gray-900">Secure Payment</h4>
+                        <p class="text-xs text-gray-500 font-bold mt-1">Choose how you want to pay for <span id="payment-eq-name" class="text-gray-900">Machine</span>.</p>
+                    </div>
+                    
+                    <div class="bg-green-50 p-4 rounded-xl border border-green-100 flex justify-between items-center">
+                        <span class="text-sm font-bold text-green-800">Grand Total:</span>
+                        <span id="payment-grand-total" class="text-2xl font-extrabold text-[#115E33]">₹0</span>
+                    </div>
+
+                    <div class="space-y-4 pt-4">
+                        <button onclick="processPayment('full')" class="w-full bg-[#115E33] text-white p-4 rounded-xl font-extrabold text-left hover:bg-green-800 transition flex justify-between items-center shadow-md">
+                            <span>Pay Full Amount Now</span>
+                            <span id="payment-full-btn-amt">₹0</span>
+                        </button>
+                        <button onclick="processPayment('advance')" class="w-full bg-white border-2 border-[#115E33] text-[#115E33] p-4 rounded-xl font-extrabold text-left hover:bg-green-50 transition flex justify-between items-center">
+                            <span>Pay 20% Advance (Balance on completion)</span>
+                            <span id="payment-adv-btn-amt">₹0</span>
+                        </button>
+                    </div>
+                    <button onclick="goToStep(2)" class="w-full text-gray-400 font-bold text-xs mt-2 hover:text-gray-600 underline text-center">Go Back</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ADD FLEET MODAL -->
+    <div id="add-fleet-modal" class="fixed inset-0 modal-bg z-50 flex items-center justify-center hide-section p-4 backdrop-blur-md">
+        <div class="bg-white rounded-[2.5rem] shadow-2xl max-w-xl w-full overflow-hidden border border-white/20">
+            <div class="bg-gray-900 p-8 text-white flex justify-between items-center">
+                <h3 class="text-2xl font-extrabold" data-en="List Equipment" data-ta="பட்டியலை சேர்">List Equipment</h3>
+                <button onclick="closeAddFleetModal()" class="text-gray-400 hover:text-white font-bold text-xl">✕</button>
+            </div>
+            <form onsubmit="handleAddFleet(event)" id="add-fleet-form" class="p-8 space-y-4 bg-white max-h-[70vh] overflow-y-auto text-xs font-bold text-gray-800">
+                <div><label class="block text-gray-500 mb-1">Model Name</label><input type="text" id="new-eq-name" class="w-full p-3.5 border rounded-xl" required></div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div><label class="block text-gray-500 mb-1">Category</label><select id="new-eq-cat" onchange="handleCategoryChange()" class="w-full p-3.5 border rounded-xl"><option>Tractors</option><option>Harvesters</option><option>JCB</option><option>Agri Drones</option><option>Borewell Rigs</option></select></div>
+                    <div><label class="block text-gray-500 mb-1">Listing Type</label><select id="new-eq-list-type" onchange="handleListingTypeChange()" class="w-full p-3.5 border rounded-xl border-[#115E33] bg-green-50 text-[#115E33]"><option value="rent">For Rent</option><option value="sell">For Sale</option></select></div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div><label class="block text-gray-500 mb-1">Coimbatore Location</label><input type="text" id="new-eq-loc" class="w-full p-3.5 border rounded-xl" required></div>
+                    <div id="operator-add-container"><label class="block text-gray-500 mb-1">Operator</label><select id="new-eq-operator" class="w-full p-3.5 border rounded-xl"><option value="true">With Driver & Fuel</option><option value="false">Self-Drive</option></select></div>
+                </div>
+                <div id="price-container" class="flex gap-4">
+                    <div class="flex-1"><label id="add-price-label" class="block text-gray-500 mb-1">Price (₹)</label><input type="number" id="new-eq-price" class="w-full p-3.5 border rounded-xl" required></div>
+                    <div class="flex-1" id="add-unit-container"><label class="block text-gray-500 mb-1">Unit</label><select id="new-eq-unit" class="w-full p-3.5 border rounded-xl"><option>/ hour</option><option>/ day</option><option>/ acre</option></select></div>
+                </div>
+                <div id="capacity-container" class="hidden"><label class="block text-gray-500 mb-1">Max Depth</label><input type="text" id="new-eq-capacity" class="w-full p-3.5 border rounded-xl"></div>
+                <button type="submit" class="w-full bg-[#115E33] text-white py-4 rounded-xl font-extrabold mt-4 text-sm shadow-lg">Publish Listing</button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- INDIVIDUAL GPS TRACKING MODAL (MINI-MAP) -->
+    <div id="gps-modal" class="fixed inset-0 modal-bg z-50 flex items-center justify-center hide-section p-4 backdrop-blur-md">
+        <div class="bg-white rounded-[2.5rem] shadow-2xl max-w-lg w-full overflow-hidden border border-white/20">
+            <div class="bg-gray-900 p-8 text-white flex justify-between items-center">
+                <h3 class="text-2xl font-extrabold flex items-center gap-3"><span class="w-4 h-4 bg-green-500 rounded-full animate-ping"></span> Live Telematics</h3>
+                <button onclick="closeGPSModal()" class="text-gray-400 hover:text-white font-bold text-2xl w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center">✕</button>
+            </div>
+            <div class="p-6 bg-gray-50 space-y-4">
+                <p class="text-green-700 text-sm font-bold bg-green-100 px-4 py-2 rounded-xl text-center" id="gps-modal-loc">Location</p>
+                <div id="modal-single-map" class="w-full h-64 bg-gray-200 rounded-3xl overflow-hidden shadow-inner">
+                    Loading GPS Coordinate...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT -->
+    <script>
+        // --- 1. LOCAL IMAGES DATABASE WITH GPS COORDINATES (V12) ---
+        let farmerLocation = "Thondamuthur, Coimbatore";
+        let equipmentData = [];
+        let farmerBookings = []; 
+        let totalEarnings = 185000;
+        let adminChartInstance = null; 
+        let googleMapsLoaded = false;
+
+        const specsTemplates = {
+            "Tractors": [ "Engine Power: 50 HP", "Hydraulic Lift: 1800 kg", "Fuel Tank: 60L Diesel", "Steering: Power", "Brakes: Oil Immersed", "PTO Power: 43.5 HP", "Cylinders: 3", "Gearbox: 8F+2R", "Clutch: Dual", "Emission: TREM IV" ],
+            "Harvesters": [ "Cutter Bar: 14 Ft", "Engine: 101 HP", "Grain Tank: 1800L", "Cleaning Area: 3.2 sq.m", "Fuel: 8 L/hr", "Track: 500 mm", "Drum: Tooth Type", "Straw Walker: 4 Step", "Weight: 4200 kg", "Loss Rate: < 1.5%" ],
+            "JCB": [ "Bucket: 1.1 cu.m", "Dig Depth: 4.77m", "Engine: 76 HP", "Weight: 7660 kg", "Speed: 40 km/h", "Hydraulic: 118 L/m", "Cabin: AC ROPS", "Shovel: 6200 kgf", "Tire: 12.5x18", "GPS: Installed" ],
+            "Agri Drones": [ "Tank: 30L", "Spray Width: 9m", "Flight: 18 Mins", "Speed: 10 m/s", "Radar: Yes", "Camera: HD FPV", "Spray Rate: 8 L/m", "Nozzles: 16", "Batteries: 4x", "Coverage: 40 Acres/Day" ],
+            "Borewell Rigs": [ "Depth: 1000 Ft", "Weight: 16 Tons", "Compressor: 1200 CFM", "Chassis: AL 2518", "Diameter: 6.5 In", "Pull: 18,000 kgf", "Rotation: 100 RPM", "Hyd Tank: 400L", "Rod: 15 Ft", "Jacks: 4 Hyd" ]
+        };
+
+        const ownerNames = [
+            { name: "Suresh Kovai", phone: "+91 98422 11001", rating: 4.9, review: "Prompt delivery! Vehicle is in peak condition and driver is highly experienced." },
+            { name: "Kovai Fleet Works", phone: "+91 97877 22110", rating: 4.8, review: "Reliable service in Coimbatore. Always on time with clean machinery." },
+            { name: "Velan Agri Services", phone: "+91 94430 33221", rating: 4.7, review: "Very skilled operator. Completed work faster than expected." },
+            { name: "Kongu Farm Rentals", phone: "+91 98941 44332", rating: 5.0, review: "Exceptional machine performance. Fuel efficient and smooth operation." }
+        ];
+
+        const coimbatoreSubLocations = [ "Gandhipuram", "Peelamedu", "Pollachi", "Annur", "Sulur", "Mettupalayam", "Saravanampatti", "Singanallur", "Ukkadam", "Perur" ];
+
+        function loadDatabase() {
+            // V12 ensures all previous fake CSS map coordinate logic is wiped out and replaced with Lat/Lng
+            const savedData = localStorage.getItem('farmFleetEquipmentsV12'); 
+            const savedBookings = localStorage.getItem('farmFleetBookingsV12');
+            const savedEarnings = localStorage.getItem('farmFleetEarningsV12');
+            
+            if (savedData) { equipmentData = JSON.parse(savedData); } else { generateInitialData(); }
+            if (savedBookings) { farmerBookings = JSON.parse(savedBookings); }
+            if (savedEarnings) { totalEarnings = parseFloat(savedEarnings); }
+            updateFarmerBookingsBadge();
+        }
+
+        function generateInitialData() {
+            const catDefs = [
+                { 
+                  cat: "Tractors", 
+                  names: ["Farmtrac 50", "Farmtrac 3630 TX Plus", "John Deere 5310", "Kubota MU4501", "Mahindra 575 DI", "Massey 241", "Massey-Ferguson 185", "Sonalika 745", "Swaraj 744 FE", "Powertrac 425 N"],
+                  images: ["farmtrac 50.jpg", "Farmtrac 3630 TX plus.jpg", "john deere 5310.jpg", "kubota mu4501.jpg", "mahindra 575 di.jpg", "massey 241.jpg", "Massey-Ferguson 185.jpg", "SONALIKA 745.jpg", "swaraj 744 fe.jpg", "Powertrac 425 N.jpg"]
+                },
+                { 
+                  cat: "Harvesters", 
+                  names: ["Claas Tiger", "Kartar 4000", "Kubota DC-68 G", "Mahendra Harvester", "Preet 981", "Swaraj 8100"],
+                  images: ["claas tiger.jpg", "kartar 4000.jpg", "kubota dc-68 g.jpg", "mahendra harvester.jpg", "preet 981.jpg", "swaraj 8100.jpg"]
+                },
+                { 
+                  cat: "JCB", 
+                  names: ["CAT 424", "Hitachi EX200 (1)", "Hitachi EX200", "JCB 3DX", "Komatsu PC71"],
+                  images: ["cat424.jpg", "HITACHI-EX200 (1).jpg", "HITACHI-EX200.jpg", "jcb 3dx.jpg", "komatsu pc71.jpg"]
+                },
+                { 
+                  cat: "Agri Drones", 
+                  names: ["Agri Drone 1", "Agri Drone 2", "Agri Drone 3", "Agri Drone 4", "Agri Drone 5", "Agri Drone 6", "Agri Drone 7", "Agri Drone 8", "Agri Drone 9", "Agri Drone 10"],
+                  images: ["dr1.jpg", "dr2.jpg", "dr3.jpg", "dr4.jpg", "dr5.jpg", "dr6.jpg", "dr7.jpg", "dr8.jpg", "dr9.jpg", "dr10.jpg"]
+                },
+                { 
+                  cat: "Borewell Rigs", 
+                  names: ["Borewell Rig 1", "Borewell Rig 2", "Borewell Rig 3", "Borewell Rig 4", "Borewell Rig 5", "Borewell Rig 6", "Borewell Rig 7", "Borewell Rig 8", "Borewell Rig 9", "Borewell Rig 10"],
+                  images: ["bw1.jpg", "bw2.jpg", "bw3.jpg", "bw4.jpg", "bw5.jpg", "bw6.jpg", "bw7.jpg", "bw8.jpg", "bw9.jpg", "bw10.jpg"]
+                }
+            ];
+
+            let idCounter = 1;
+            catDefs.forEach(c => {
+                c.names.forEach((name, idx) => {
+                    const loc = `${coimbatoreSubLocations[idx % coimbatoreSubLocations.length]}, TN`;
+                    const dist = Math.floor(Math.random() * 55) + 5; 
+                    const isWorking = (idx % 3 === 0); 
+                    const isSale = (idx === c.names.length - 1); 
+                    const owner = ownerNames[idx % ownerNames.length];
+                    const itemReviews = [{ farmer: "Raju F.", rating: 5, text: owner.review }];
+                    
+                    // Generate realistic Lat/Lng coordinates around Coimbatore (11.0168, 76.9558)
+                    const randomLat = 11.0168 + ((Math.random() - 0.5) * 0.2); 
+                    const randomLng = 76.9558 + ((Math.random() - 0.5) * 0.2);
+
+                    equipmentData.push({
+                        id: idCounter++, name: name, category: c.cat, listingType: isSale ? "sell" : "rent", state: isWorking ? 'booked' : 'idle',
+                        price: isSale ? (Math.floor(Math.random() * 50) * 10000) + 200000 : (c.cat === 'Harvesters' ? 2400 : (c.cat === 'Agri Drones' ? 1100 : (c.cat === 'JCB' ? 1000 : 950))),
+                        unit: c.cat === 'Agri Drones' || c.cat === 'Harvesters' ? "/ acre" : "/ hour",
+                        capacity: c.cat === 'Borewell Rigs' ? `${600 + (idx * 50)} Ft Max` : null,
+                        location: loc, distance: dist, operator: !isSale, transitChargePerKm: 20,
+                        img: encodeURI(c.images[idx]), 
+                        owner: owner, reviews: itemReviews, specs: specsTemplates[c.cat],
+                        fieldStatus: { isWorking: isWorking && !isSale, exitTime: (isWorking && !isSale) ? "Tomorrow at 4:30 PM" : "Idle at Yard", eta: `${Math.floor(dist * 2.5)} mins (Est. Travel)` },
+                        mapCoords: { lat: randomLat, lng: randomLng }
+                    });
+                });
+            });
+            localStorage.setItem('farmFleetEquipmentsV12', JSON.stringify(equipmentData));
+        }
+
+        loadDatabase();
+
+        // --- 2. BILINGUAL & TOASTS ---
+        let isTamil = false;
+        function toggleTamil() {
+            isTamil = !isTamil;
+            document.getElementById('lang-btn').innerText = isTamil ? "English" : "தமிழ்";
+            document.querySelectorAll('[data-en]').forEach(el => { el.innerText = (isTamil && el.getAttribute('data-ta')) ? el.getAttribute('data-ta') : el.getAttribute('data-en'); });
+            renderEquipment(); 
+            showToast(isTamil ? 'தமிழ் மொழிக்கு மாற்றப்பட்டது' : 'Switched to English', 'info');
+        }
+        function t(enText, taText) { return isTamil ? taText : enText; }
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `bg-gray-900 text-white px-6 py-4 rounded-2xl shadow-2xl toast-enter flex items-center gap-3 font-bold text-sm border border-white/10 z-[200]`;
+            toast.innerHTML = `<span class="text-2xl">${type === 'success' ? '✅' : (type === 'error' ? '❌' : 'ℹ️')}</span> <span>${message}</span>`;
+            container.appendChild(toast);
+            requestAnimationFrame(() => { toast.classList.remove('toast-enter'); toast.classList.add('toast-active'); });
+            setTimeout(() => { toast.classList.remove('toast-active'); toast.style.opacity = '0'; setTimeout(() => toast.remove(), 500); }, 3500);
+        }
+
+        function formatCurrency(amount) { return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amount); }
+
+        // --- 3. LOGIN, ROLES & ADMIN PIN ---
+        function handleLogin() {
+            const nameInput = document.getElementById('userName').value.trim();
+            const phoneInput = document.getElementById('userPhone').value.trim();
+            if(!nameInput || !phoneInput) { showToast("Please enter Full Name and Mobile Number.", "error"); return; }
+            document.getElementById('display-name').textContent = nameInput;
+            document.getElementById('owner-name-display').textContent = nameInput;
+            document.getElementById('section-login').classList.add('hide-section');
+            document.getElementById('section-role').classList.remove('hide-section');
+            initFarmerDashboard(); renderOwnerDashboard();
+            showToast(`Welcome, ${nameInput}!`, 'success');
+        }
+
+        function selectRole(role) {
+            document.getElementById('section-role').classList.add('hide-section');
+            if (role === 'farmer') { document.getElementById('section-farmer').classList.remove('hide-section'); renderEquipment(); } 
+            else { document.getElementById('section-owner').classList.remove('hide-section'); }
+        }
+        function switchRoleToSelect() { document.querySelectorAll('body > div[id^="section-"]').forEach(div => div.classList.add('hide-section')); document.getElementById('section-role').classList.remove('hide-section'); }
+        function logout() { document.getElementById('userName').value = ''; document.getElementById('userPhone').value = ''; document.querySelectorAll('body > div[id^="section-"]').forEach(div => div.classList.add('hide-section')); document.getElementById('section-login').classList.remove('hide-section'); showToast('Logged out securely.', 'info'); }
+
+        function promptAdminPin() { document.getElementById('admin-pin-modal').classList.remove('hide-section'); }
+        function closeAdminPin() { document.getElementById('admin-pin-modal').classList.add('hide-section'); document.getElementById('admin-pin-input').value = ''; }
+        function verifyAdminPin() {
+            const pin = document.getElementById('admin-pin-input').value;
+            if(pin === "0000") {
+                closeAdminPin();
+                document.getElementById('section-role').classList.add('hide-section');
+                document.getElementById('section-admin').classList.remove('hide-section');
+                initAdminDashboard();
+                showToast("Admin Gateway Unlocked", "success");
+            } else {
+                showToast("Invalid PIN Access Denied", "error");
+            }
+        }
+
+        // --- 4. FARMER DASHBOARD ---
+        let activeCategory = "All"; let currentRadiusFilter = 150; let currentOperatorFilter = "all"; let marketMode = "rent";
+
+        function updateFarmerLocation(newLoc) {
+            farmerLocation = newLoc;
+            equipmentData.forEach(item => { item.distance = Math.floor(Math.random() * 55) + 5; item.fieldStatus.eta = `${Math.floor(item.distance * 2.5)} mins (Est. Travel)`; });
+            localStorage.setItem('farmFleetEquipmentsV12', JSON.stringify(equipmentData));
+            showToast(`Location updated to ${newLoc}. Distances recalculated.`);
+            renderEquipment();
+        }
+
+        function setMarketMode(mode) {
+            marketMode = mode;
+            document.getElementById('mode-btn-rent').className = mode === 'rent' ? "toggle-btn active px-8 py-2 rounded-lg font-extrabold text-sm transition-all" : "toggle-btn inactive px-8 py-2 rounded-lg font-extrabold text-sm transition-all";
+            document.getElementById('mode-btn-sell').className = mode === 'sell' ? "toggle-btn active px-8 py-2 rounded-lg font-extrabold text-sm transition-all" : "toggle-btn inactive px-8 py-2 rounded-lg font-extrabold text-sm transition-all";
+            document.getElementById('operator-filter-container').style.display = mode === 'sell' ? 'none' : 'block';
+            renderEquipment();
+        }
+
+        function initFarmerDashboard() {
+            const categories = ["All", "Tractors", "Harvesters", "JCB", "Agri Drones", "Borewell Rigs"];
+            document.getElementById('category-buttons').innerHTML = categories.map(cat => `<button onclick="setCategory('${cat}')" id="cat-btn-${cat.replace(/\s+/g, '')}" class="cat-btn px-6 py-2.5 rounded-full text-sm font-extrabold shrink-0 border-2 ${cat === 'All' ? 'bg-[#115E33] text-white border-[#115E33]' : 'border-gray-100 text-gray-500'}">${cat}</button>`).join('');
+        }
+        function setCategory(cat) {
+            activeCategory = cat;
+            document.querySelectorAll('.cat-btn').forEach(btn => btn.className = "cat-btn px-6 py-2.5 rounded-full text-sm font-extrabold shrink-0 border-2 border-gray-100 bg-white text-gray-500");
+            document.getElementById(`cat-btn-${cat.replace(/\s+/g, '')}`).className = "cat-btn px-6 py-2.5 rounded-full text-sm font-extrabold shrink-0 border-2 bg-[#115E33] text-white border-[#115E33]";
+            renderEquipment();
+        }
+        function updateRadius(val) { currentRadiusFilter = parseInt(val); document.getElementById('radius-val').innerText = val + " km"; renderEquipment(); }
+        function updateOperatorFilter(val) { currentOperatorFilter = val; renderEquipment(); }
+
+        function renderEquipment() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const grid = document.getElementById('equipment-grid');
+            
+            const filteredData = equipmentData.filter(item => {
+                const matchMode = item.listingType === marketMode;
+                const matchCat = activeCategory === "All" || item.category === activeCategory;
+                const matchSearch = item.name.toLowerCase().includes(searchTerm) || item.location.toLowerCase().includes(searchTerm);
+                const matchRadius = item.distance <= currentRadiusFilter;
+                let matchOp = true;
+                if (marketMode === 'rent') { if (currentOperatorFilter === 'driver') matchOp = item.operator === true; if (currentOperatorFilter === 'self') matchOp = item.operator === false; }
+                return matchMode && matchCat && matchSearch && matchRadius && matchOp;
+            });
+
+            document.getElementById('count-summary').innerText = t(`Showing ${filteredData.length} Vehicles near ${farmerLocation.split(',')[0]}`, `${farmerLocation.split(',')[0]} அருகில் ${filteredData.length} வாகனங்கள்`);
+            if(filteredData.length === 0) { grid.innerHTML = `<div class="col-span-full py-20 text-center"><p class="text-xl font-bold text-gray-500">${t("No listings found.", "பட்டியல்கள் காணப்படவில்லை.")}</p></div>`; return; }
+
+            grid.innerHTML = filteredData.map(item => {
+                const isBorewell = item.category === 'Borewell Rigs'; const isSale = item.listingType === 'sell';
+                let tags = `<span class="bg-gray-100 text-gray-600 border border-gray-200 text-[10px] uppercase tracking-widest px-2.5 py-1 rounded-md font-extrabold">${item.category}</span>`;
+                if (isSale) { tags += `<span class="bg-blue-50 text-blue-700 border border-blue-200 text-[10px] uppercase tracking-widest px-2.5 py-1 rounded-md font-extrabold">${t('For Sale', 'விற்பனைக்கு')}</span>`; } 
+                else { tags += item.operator ? `<span class="bg-green-50 text-green-700 border border-green-200 text-[10px] uppercase tracking-widest px-2.5 py-1 rounded-md font-extrabold">${t('Driver + Fuel', 'ஓட்டுநர் + எரிபொருள்')}</span>` : `<span class="bg-orange-50 text-orange-700 border border-orange-200 text-[10px] uppercase tracking-widest px-2.5 py-1 rounded-md font-extrabold">${t('Self-Drive', 'சுய-ஓட்டுநர்')}</span>`; }
+
+                let priceDisplay = isSale ? `<span class="text-3xl font-extrabold text-[#115E33]">${formatCurrency(item.price)}</span>` : (isBorewell ? `<span class="text-lg font-extrabold text-[#115E33]">${item.capacity}</span>` : `<span class="text-3xl font-extrabold text-[#115E33]">₹${item.price}</span><span class="text-[10px] text-gray-400 font-extrabold ml-1 uppercase">${t(item.unit, item.unit)}</span>`);
+                let btnText = isSale ? t('Buy Now', 'வாங்கு') : t('View Details & Book', 'விவரங்கள் & பதிவு');
+                
+                return `<div class="bg-white border border-gray-100 rounded-[2rem] overflow-hidden shadow-sm hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2"><div class="h-56 bg-gray-100 relative overflow-hidden"><img src="${item.img}" onerror="this.onerror=null; this.src='image_cdc718.jpg';" class="w-full h-full object-cover"><div class="absolute top-4 left-4 bg-white/95 backdrop-blur text-gray-900 text-xs px-3.5 py-1.5 rounded-xl font-extrabold shadow-lg border border-white">📍 ${item.distance} km</div>${item.state !== 'idle' ? `<div class="absolute inset-0 bg-gray-900/80 flex flex-col items-center justify-center text-white"><span class="font-extrabold text-xl tracking-wide">${item.state==='broken' ? 'Broken Down' : t('Currently Busy', 'பிஸி')}</span></div>` : ''}</div><div class="p-6"><h4 class="font-extrabold text-gray-900 text-2xl mb-1 truncate">${item.name}</h4><p class="text-xs text-gray-500 mb-4 font-bold">🚩 Base: ${item.location}</p><div class="flex flex-wrap gap-2 mb-6">${tags}</div><div class="flex justify-between items-end pt-5 border-t border-gray-100"><div>${priceDisplay}</div>${item.state === 'idle' ? `<button onclick="openBookingModal(${item.id})" class="bg-gray-900 text-white px-5 py-2.5 rounded-xl font-extrabold text-xs hover:bg-[#115E33] transition shadow-md">${btnText}</button>` : `<button disabled class="bg-gray-100 text-gray-400 px-5 py-2.5 rounded-xl font-extrabold text-xs">Busy</button>`}</div></div></div>`
+            }).join('');
+        }
+
+        // --- 5. MULTI-STEP BOOKING & KYC MODAL ---
+        let currentSelectedEquipment = null;
+        let bookingCalculations = { base: 0, transit: 0, commission: 0, total: 0 };
+
+        function openBookingModal(id) {
+            const item = equipmentData.find(e => e.id === id);
+            currentSelectedEquipment = item;
+            
+            document.getElementById('modal-img').src = item.img;
+            document.getElementById('modal-title').innerText = item.name;
+            document.getElementById('modal-cat-badge').innerText = item.category;
+            
+            const isSale = item.listingType === 'sell';
+            document.getElementById('modal-operator-badge').innerText = isSale ? "For Sale / Purchase" : (item.operator ? "Driver Included" : "Self-Drive Only");
+            document.getElementById('modal-operator-badge').className = isSale ? "bg-blue-600 text-white text-[10px] font-extrabold uppercase px-3 py-1 rounded shadow-md" : (item.operator ? "bg-green-600 text-white text-[10px] font-extrabold uppercase px-3 py-1 rounded shadow-md" : "bg-orange-600 text-white text-[10px] font-extrabold uppercase px-3 py-1 rounded shadow-md");
+
+            document.getElementById('modal-owner-name').innerText = item.owner.name;
+            document.getElementById('modal-owner-phone').innerText = `📞 Phone: ${item.owner.phone}`;
+            document.getElementById('modal-owner-rating').innerText = item.owner.rating;
+            document.getElementById('modal-owner-review-text').innerText = item.reviews[0] ? item.reviews[0].text : "Great machinery!";
+            document.getElementById('modal-specs-grid').innerHTML = item.specs.map(s => `<div class="bg-gray-50 p-2.5 rounded-lg flex items-center gap-2"><span>✔</span> <span>${s}</span></div>`).join('');
+
+            if(isSale) {
+                document.getElementById('telematics-container').classList.add('hidden');
+                document.getElementById('transit-fee-container').classList.add('hidden');
+                document.getElementById('duration-container').classList.add('hidden');
+                document.getElementById('modal-breakdown-title').innerText = "Purchase Breakdown";
+                document.getElementById('modal-base-label').innerText = "Selling Price";
+                document.getElementById('modal-base-rate-display').innerText = formatCurrency(item.price);
+                const fee = item.price * 0.01;
+                bookingCalculations = { base: item.price, transit: 0, commission: fee, total: item.price + fee };
+                document.getElementById('modal-commission').innerText = formatCurrency(fee);
+                document.getElementById('modal-total').innerText = formatCurrency(bookingCalculations.total);
+            } else {
+                document.getElementById('telematics-container').classList.remove('hidden');
+                document.getElementById('modal-field-work-status').innerText = item.fieldStatus.isWorking ? "Working in Field" : "Idle at Yard (Ready Now)";
+                document.getElementById('modal-field-work-status').className = item.fieldStatus.isWorking ? "text-xs font-extrabold text-amber-800 bg-amber-50 border border-amber-200 px-3 py-1 rounded-full" : "text-xs font-extrabold text-green-800 bg-green-50 border border-green-200 px-3 py-1 rounded-full";
+                document.getElementById('modal-exit-time').innerText = item.fieldStatus.exitTime;
+                document.getElementById('modal-eta').innerText = item.fieldStatus.eta;
+
+                if (item.category === 'Borewell Rigs') {
+                    document.getElementById('duration-container').classList.add('hidden');
+                    document.getElementById('transit-fee-container').classList.add('hidden');
+                    document.getElementById('modal-base-label').innerText = "Max Drilling Depth";
+                    document.getElementById('modal-base-rate-display').innerText = item.capacity;
+                    document.getElementById('modal-commission').innerText = "Included";
+                    document.getElementById('modal-total').innerText = "Quote Request";
+                    document.getElementById('modal-btn-next-kyc').innerText = "Request Custom Quote ➔";
+                } else {
+                    document.getElementById('duration-container').classList.remove('hidden');
+                    document.getElementById('transit-fee-container').classList.remove('hidden');
+                    document.getElementById('modal-base-label').innerText = `Base Rate (${item.unit})`;
+                    document.getElementById('booking-duration').value = 1;
+                    calculateTotal();
+                    document.getElementById('modal-btn-next-kyc').innerText = "Proceed to Identity Verification ➔";
+                }
+            }
+
+            goToStep(1);
+            document.getElementById('booking-modal').classList.remove('hide-section');
+        }
+
+        function calculateTotal() {
+            if (!currentSelectedEquipment || currentSelectedEquipment.category === 'Borewell Rigs' || currentSelectedEquipment.listingType === 'sell') return;
+            let duration = parseInt(document.getElementById('booking-duration').value) || 1;
+            let baseTotal = currentSelectedEquipment.price * duration;
+            let transitFee = currentSelectedEquipment.operator ? (currentSelectedEquipment.distance * currentSelectedEquipment.transitChargePerKm) : 0;
+            let commission = baseTotal * 0.05;
+            
+            bookingCalculations = { base: baseTotal, transit: transitFee, commission: commission, total: baseTotal + transitFee + commission };
+            
+            document.getElementById('modal-base-rate-display').innerText = `₹${baseTotal}`;
+            document.getElementById('modal-distance-text').innerText = `${currentSelectedEquipment.distance} km`;
+            document.getElementById('modal-transit-fee').innerText = `₹${transitFee}`;
+            document.getElementById('modal-commission').innerText = `₹${commission.toFixed(0)}`;
+            document.getElementById('modal-total').innerText = `₹${bookingCalculations.total.toFixed(0)}`;
+        }
+
+        function goToStep(step) {
+            document.getElementById('booking-step-1').classList.add('hide-section');
+            document.getElementById('booking-step-2').classList.add('hide-section');
+            document.getElementById('booking-step-3').classList.add('hide-section');
+            document.getElementById(`booking-step-${step}`).classList.remove('hide-section');
+            
+            if(step === 3) {
+                document.getElementById('payment-eq-name').innerText = currentSelectedEquipment.name;
+                document.getElementById('payment-grand-total').innerText = formatCurrency(bookingCalculations.total);
+                document.getElementById('payment-full-btn-amt').innerText = formatCurrency(bookingCalculations.total);
+                document.getElementById('payment-adv-btn-amt').innerText = formatCurrency(bookingCalculations.total * 0.2); 
+            }
+        }
+
+        function verifyKYC() {
+            const idVal = document.getElementById('kyc-id').value;
+            const otpVal = document.getElementById('kyc-otp').value;
+            if(idVal.length >= 10 && otpVal === '1234') {
+                showToast("Identity Verified Successfully.", "success");
+                goToStep(3);
+            } else {
+                showToast("Invalid Verification or OTP (Use 1234).", "error");
+            }
+        }
+
+        function processPayment(type) {
+            const amtPaid = type === 'full' ? bookingCalculations.total : (bookingCalculations.total * 0.2);
+            
+            currentSelectedEquipment.state = 'booked';
+            const eqIndex = equipmentData.findIndex(e => e.id === currentSelectedEquipment.id);
+            if(eqIndex !== -1) equipmentData[eqIndex] = currentSelectedEquipment;
+
+            const newBooking = {
+                id: 'B' + Date.now(), eqId: currentSelectedEquipment.id, name: currentSelectedEquipment.name,
+                owner: currentSelectedEquipment.owner.name, status: 'Active', amtPaid: amtPaid,
+                totalAmt: bookingCalculations.total, type: currentSelectedEquipment.listingType === 'sell' ? 'Purchase' : 'Rental', brokenNotified: false
+            };
+            farmerBookings.unshift(newBooking);
+            
+            if (type === 'full') {
+                totalEarnings += bookingCalculations.total;
+            } else {
+                totalEarnings += amtPaid;
+            }
+
+            localStorage.setItem('farmFleetBookingsV12', JSON.stringify(farmerBookings));
+            localStorage.setItem('farmFleetEquipmentsV12', JSON.stringify(equipmentData));
+            localStorage.setItem('farmFleetEarningsV12', totalEarnings);
+
+            updateFarmerBookingsBadge();
+            showToast(`✅ Payment of ${formatCurrency(amtPaid)} successful! Booking Confirmed.`);
+            closeBookingModal();
+            renderEquipment();
+        }
+
+        function closeBookingModal() { 
+            document.getElementById('booking-modal').classList.add('hide-section');
+            document.getElementById('kyc-id').value = '';
+            document.getElementById('kyc-otp').value = '';
+        }
+
+        // --- 6. FARMER BOOKINGS & BREAKDOWN HANDLING ---
+        function updateFarmerBookingsBadge() { document.getElementById('farmer-bookings-badge').innerText = farmerBookings.length; }
+
+        function openFarmerBookings() {
+            const list = document.getElementById('farmer-bookings-list');
+            if(farmerBookings.length === 0) { list.innerHTML = `<div class="text-center p-10 text-gray-500 font-bold">No active bookings found.</div>`; } 
+            else {
+                list.innerHTML = farmerBookings.map(b => {
+                    let actionBtn = ''; let statusClass = "bg-green-100 text-green-800";
+                    if(b.status === 'Broken Down') {
+                        statusClass = "bg-red-100 text-red-800";
+                        actionBtn = `<button onclick="resolveFarmerBreakdown('${b.id}')" class="bg-red-600 text-white px-4 py-2 rounded-lg font-bold text-xs shadow-md">Resolve Issue / Cancel</button>`;
+                    } else if (b.status === 'Cancelled & Refunded') { statusClass = "bg-gray-200 text-gray-600"; }
+                    return `<div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex justify-between items-center"><div><h4 class="font-extrabold text-xl text-gray-900">${b.name} <span class="text-xs px-2 py-0.5 rounded-full ${statusClass}">${b.status}</span></h4><p class="text-sm text-gray-500 font-bold mt-1">Order ID: ${b.id} • Owner: ${b.owner}</p><p class="text-xs text-gray-400 font-bold mt-1">Paid: ${formatCurrency(b.amtPaid)} / Total: ${formatCurrency(b.totalAmt)}</p></div><div>${actionBtn}</div></div>`;
+                }).join('');
+            }
+            document.getElementById('farmer-bookings-modal').classList.remove('hide-section');
+        }
+
+        function resolveFarmerBreakdown(bookingId) {
+            const booking = farmerBookings.find(b => b.id === bookingId);
+            if(confirm(`The equipment ${booking.name} broke down. Do you want to cancel the order and receive a full refund of ${formatCurrency(booking.amtPaid)}?`)) {
+                booking.status = 'Cancelled & Refunded';
+                localStorage.setItem('farmFleetBookingsV12', JSON.stringify(farmerBookings));
+                showToast("Refund initiated to your original payment method.", "info");
+                openFarmerBookings();
+            }
+        }
+
+        // --- 7. OWNER PORTAL LOGIC ---
+        function renderOwnerDashboard() {
+            document.getElementById('owner-fleet-count').innerText = equipmentData.length;
+            document.getElementById('owner-earnings-display').innerText = formatCurrency(totalEarnings);
+            
+            let activeJobsCount = 0;
+            document.getElementById('owner-fleet-tbody').innerHTML = equipmentData.map(item => {
+                const isSale = item.listingType === 'sell';
+                let priceCol = isSale ? `<span class="text-blue-700 font-extrabold">${formatCurrency(item.price)}</span> <span class="text-[10px] bg-blue-50 px-2 py-0.5 rounded text-blue-600 ml-1">SALE</span>` : (item.category === 'Borewell Rigs' ? `<span class="text-gray-700 text-sm font-extrabold">${item.capacity}</span>` : `₹${item.price} <span class="text-[10px] text-gray-400 font-extrabold ml-1 uppercase tracking-widest">${item.unit}</span>`);
+                
+                let stateClass = "bg-green-50 text-green-700 border-green-200"; let actionBtn = ""; 
+                
+                if (item.state === 'booked') {
+                    activeJobsCount++; stateClass = "bg-orange-50 text-orange-700 border-orange-200"; 
+                    actionBtn = `<button onclick="reportBreakdown(${item.id})" class="text-[10px] font-extrabold text-red-500 uppercase bg-red-50 px-3 py-1.5 rounded-md hover:bg-red-100 border border-red-100 mt-1">Mark Broken</button>`;
+                } else if (item.state === 'broken') {
+                    stateClass = "bg-red-50 text-red-700 border-red-200"; 
+                    actionBtn = `<button onclick="repairEquipment(${item.id})" class="text-[10px] font-extrabold text-green-500 uppercase bg-green-50 px-3 py-1.5 rounded-md hover:bg-green-100 border border-green-100 mt-1">Mark Repaired</button>`;
+                }
+
+                return `
+                <tr class="hover:bg-gray-50 transition border-b border-gray-100">
+                    <td class="px-6 py-4">
+                        <span class="font-extrabold text-gray-900 block text-base">${item.name}</span>
+                        <span class="text-gray-400 text-[10px] font-extrabold uppercase">${item.category} • ${item.location}</span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="border px-3 py-1 rounded-lg text-[10px] font-extrabold uppercase ${stateClass}">${item.state}</span>
+                        <div class="mt-1">${actionBtn}</div>
+                    </td>
+                    <td class="px-6 py-4 text-center">
+                        <button onclick="openGPSModal(${item.id})" class="bg-blue-50 text-blue-700 border border-blue-100 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-blue-100 transition shadow-sm">📍 Track Live</button>
+                    </td>
+                    <td class="px-6 py-4 text-right font-extrabold text-[#115E33]">${priceCol}</td>
+                </tr>`
+            }).join('');
+
+            document.getElementById('owner-jobs-count').innerText = activeJobsCount;
+        }
+
+        function switchOwnerTab(tabId) { 
+            ['dashboard', 'fleet', 'map'].forEach(id => document.getElementById(`owner-tab-${id}`).classList.add('hide-section')); 
+            document.getElementById(`owner-tab-${tabId}`).classList.remove('hide-section'); 
+            if(tabId === 'map') setTimeout(() => initGoogleMap('owner'), 100);
+        }
+
+        function reportBreakdown(eqId) {
+            const item = equipmentData.find(e => e.id === eqId);
+            item.state = 'broken';
+            const spare = equipmentData.find(e => e.category === item.category && e.state === 'idle');
+            
+            if(spare) {
+                if(confirm(`Machine marked broken. Spare "${spare.name}" available. Swap and send to farmer?`)) {
+                    spare.state = 'booked'; showToast(`Swap successful. Dispatched ${spare.name}.`, 'success');
+                } else { notifyFarmerBroken(eqId); }
+            } else {
+                alert(`No spare available in category ${item.category}. Notifying farmer for cancellation.`); notifyFarmerBroken(eqId);
+            }
+            localStorage.setItem('farmFleetEquipmentsV12', JSON.stringify(equipmentData));
+            renderOwnerDashboard(); renderEquipment();
+        }
+
+        function repairEquipment(eqId) {
+            const item = equipmentData.find(e => e.id === eqId); item.state = 'idle';
+            localStorage.setItem('farmFleetEquipmentsV12', JSON.stringify(equipmentData));
+            renderOwnerDashboard(); renderEquipment(); showToast("Equipment repaired and is back online.", "success");
+        }
+
+        function openAddFleetModal() { document.getElementById('add-fleet-modal').classList.remove('hide-section'); }
+        function closeAddFleetModal() { document.getElementById('add-fleet-modal').classList.add('hide-section'); }
+
+        function handleListingTypeChange() {
+            const listType = document.getElementById('new-eq-list-type').value; const cat = document.getElementById('new-eq-cat').value;
+            if(listType === 'sell') {
+                document.getElementById('price-container').classList.remove('hidden'); document.getElementById('add-unit-container').classList.add('hidden'); document.getElementById('capacity-container').classList.add('hidden'); document.getElementById('add-price-label').innerText = "Selling Price (₹)"; document.getElementById('operator-add-container').classList.add('hidden'); document.getElementById('new-eq-price').setAttribute('required', 'true');
+            } else {
+                document.getElementById('operator-add-container').classList.remove('hidden');
+                if(cat === 'Borewell Rigs') { document.getElementById('price-container').classList.add('hidden'); document.getElementById('capacity-container').classList.remove('hidden'); document.getElementById('new-eq-price').removeAttribute('required'); } 
+                else { document.getElementById('price-container').classList.remove('hidden'); document.getElementById('add-unit-container').classList.remove('hidden'); document.getElementById('capacity-container').classList.add('hidden'); document.getElementById('add-price-label').innerText = "Rental Price (₹)"; document.getElementById('new-eq-price').setAttribute('required', 'true'); }
+            }
+        }
+        function handleCategoryChange() { handleListingTypeChange(); }
+
+        function handleAddFleet(event) {
+            event.preventDefault(); 
+            const name = document.getElementById('new-eq-name').value; const category = document.getElementById('new-eq-cat').value; const location = document.getElementById('new-eq-loc').value || "Pollachi"; const listType = document.getElementById('new-eq-list-type').value; const isOperator = listType === 'sell' ? false : (document.getElementById('new-eq-operator').value === 'true');
+            
+            const randomLat = 11.0168 + ((Math.random() - 0.5) * 0.2); 
+            const randomLng = 76.9558 + ((Math.random() - 0.5) * 0.2);
+
+            const newItem = {
+                id: Date.now(), name: name, category: category, listingType: listType, state: 'idle', price: parseFloat(document.getElementById('new-eq-price').value) || 1000, unit: document.getElementById('new-eq-unit').value, capacity: category === 'Borewell Rigs' ? document.getElementById('new-eq-capacity').value : null, location: `${location}, TN`, distance: 5, operator: isOperator, transitChargePerKm: 20, img: "image_cdc718.jpg", available: true, owner: { name: document.getElementById('userName').value || "New Owner", phone: document.getElementById('userPhone').value || "+91 98765 43210", rating: 5.0, review: "Verified newly listed machinery." }, reviews: [], specs: specsTemplates[category] || specsTemplates["Tractors"], fieldStatus: { isWorking: false, exitTime: "Idle at Yard", eta: "15 mins (Ready Now)" }, mapCoords: { lat: randomLat, lng: randomLng }
+            };
+
+            equipmentData.unshift(newItem); 
+            localStorage.setItem('farmFleetEquipmentsV12', JSON.stringify(equipmentData));
+
+            document.getElementById('searchInput').value = ''; setMarketMode(listType); setCategory("All"); document.getElementById('radiusSlider').value = 150; updateRadius(150);
+            closeAddFleetModal(); renderOwnerDashboard(); renderEquipment(); 
+            showToast(`🎉 Published ${name}! Added to live map and Farmer Portal.`);
+        }
+
+        // --- 8. SUPER ADMIN DASHBOARD LOGIC ---
+        function switchAdminTab(tabId) { 
+            ['dashboard', 'fleet', 'map'].forEach(id => document.getElementById(`admin-tab-${id}`).classList.add('hide-section')); 
+            document.getElementById(`admin-tab-${tabId}`).classList.remove('hide-section'); 
+            if(tabId === 'map') setTimeout(() => initGoogleMap('admin'), 100);
+        }
+
+        function initAdminDashboard() {
+            renderAdminDashboard();
+            toggleAdminChart('weekly'); 
+        }
+
+        function renderAdminDashboard() {
+            const activeRentals = equipmentData.filter(e => e.state === 'booked').length;
+            const activeDisputes = equipmentData.filter(e => e.state === 'broken').length;
+            
+            document.getElementById('admin-revenue-display').innerText = formatCurrency(totalEarnings);
+            document.getElementById('admin-rentals-display').innerText = activeRentals;
+            document.getElementById('admin-disputes-display').innerText = activeDisputes;
+            document.getElementById('admin-pending-display').innerText = Math.max(0, equipmentData.length - 35); 
+
+            const actionCenter = document.getElementById('admin-action-center');
+            const brokenEquipments = equipmentData.filter(e => e.state === 'broken');
+            
+            if (brokenEquipments.length > 0) {
+                actionCenter.innerHTML = brokenEquipments.map(eq => `
+                    <div class="bg-[#121418] border border-[#2A2E39] rounded-xl p-4 relative overflow-hidden">
+                        <div class="absolute top-0 left-0 w-1 h-full bg-red-500/50"></div>
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-[10px] font-extrabold text-gray-400 flex items-center gap-2"><span class="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span> HIGH URGENCY</span>
+                            <span class="text-[10px] text-gray-500">Just now</span>
+                        </div>
+                        <h4 class="text-sm font-extrabold text-white">Dispute #${eq.id} Opened</h4>
+                        <p class="text-xs text-gray-400 mt-1 line-clamp-2">${eq.name} reported broken at ${eq.location}.</p>
+                    </div>
+                `).join('');
+            } else {
+                actionCenter.innerHTML = `
+                    <div class="bg-[#121418] border border-[#2A2E39] rounded-xl p-6 text-center">
+                        <span class="text-green-500 text-3xl block mb-2">✔️</span>
+                        <h4 class="text-sm font-extrabold text-white">All Systems Operational</h4>
+                        <p class="text-xs text-gray-400 mt-1">No active disputes or alerts.</p>
+                    </div>`;
+            }
+
+            const tbody = document.getElementById('admin-equipment-tbody');
+            const recentEquipments = equipmentData.slice(0, 5);
+            
+            tbody.innerHTML = recentEquipments.map(eq => {
+                let statusBadge = '';
+                let actionBtn = `<button onclick="openGPSModal(${eq.id})" class="text-gray-500 hover:text-white transition" title="Track Live">📍</button>`;
+                
+                if (eq.state === 'idle') {
+                    statusBadge = `<span class="bg-green-900/40 text-green-400 border border-green-900/50 px-2 py-1 rounded text-[10px] uppercase font-bold tracking-wider">Verified</span>`;
+                } else if (eq.state === 'broken') {
+                    statusBadge = `<span class="bg-red-900/30 text-red-400 border border-red-900/50 px-2 py-1 rounded text-[10px] uppercase font-bold tracking-wider">Broken</span>`;
+                    actionBtn = `<button onclick="repairEquipmentAdmin(${eq.id})" class="bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 px-3 py-1 rounded hover:bg-cyan-500/20 transition text-xs font-bold">Resolve</button>`;
+                } else {
+                    statusBadge = `<span class="bg-orange-900/30 text-orange-400 border border-orange-900/50 px-2 py-1 rounded text-[10px] uppercase font-bold tracking-wider">In Progress</span>`;
+                }
+
+                return `
+                <tr class="hover:bg-[#121418] transition">
+                    <td class="py-4 flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-lg bg-cyan-900/30 flex items-center justify-center text-cyan-400 border border-cyan-900/50">🚜</div>
+                        <div>
+                            <p class="font-extrabold text-white">${eq.owner.name}</p>
+                            <p class="text-[10px] text-gray-500 font-mono">ID: ${eq.id}</p>
+                        </div>
+                    </td>
+                    <td class="py-4 text-gray-300 font-medium">${eq.name}</td>
+                    <td class="py-4 text-gray-400 text-xs">📍 ${eq.location}</td>
+                    <td class="py-4 text-center"><button onclick="openGPSModal(${eq.id})" class="bg-blue-900/30 text-blue-400 border border-blue-900/50 px-3 py-1 rounded-lg text-[10px] font-bold hover:bg-blue-800/50 transition">📍 Map</button></td>
+                    <td class="py-4">${statusBadge}</td>
+                    <td class="py-4 text-center">${actionBtn}</td>
+                </tr>`;
+            }).join('');
+            
+            document.getElementById('admin-showing-text').innerText = `Showing ${recentEquipments.length} of ${equipmentData.length} total records`;
+        }
+
+        function repairEquipmentAdmin(eqId) {
+            const item = equipmentData.find(e => e.id === eqId); 
+            if(item) {
+                item.state = 'idle';
+                localStorage.setItem('farmFleetEquipmentsV12', JSON.stringify(equipmentData));
+                renderAdminDashboard(); 
+                showToast(`Admin System: ${item.name} status forcefully resolved.`, "success");
+            }
+        }
+
+        function toggleAdminChart(range) {
+            const ctx = document.getElementById('adminRevenueChart').getContext('2d');
+            const btnDaily = document.getElementById('btn-chart-daily');
+            const btnWeekly = document.getElementById('btn-chart-weekly');
+            
+            let data = []; let labels = [];
+            
+            if (range === 'daily') {
+                btnDaily.className = "px-4 py-1.5 text-xs font-bold bg-cyan-400 text-black rounded shadow-[0_0_10px_rgba(6,182,212,0.4)]";
+                btnWeekly.className = "px-4 py-1.5 text-xs font-bold text-gray-400 hover:text-white rounded";
+                labels = ['12 AM', '4 AM', '8 AM', '12 PM', '4 PM', '8 PM'];
+                data = [1200, 3000, 4500, 8000, 15000, 24000];
+            } else {
+                btnWeekly.className = "px-4 py-1.5 text-xs font-bold bg-cyan-400 text-black rounded shadow-[0_0_10px_rgba(6,182,212,0.4)]";
+                btnDaily.className = "px-4 py-1.5 text-xs font-bold text-gray-400 hover:text-white rounded";
+                labels = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+                data = [10000, 25000, 32000, 85000, 15000, -5000, 45000];
+            }
+
+            if(adminChartInstance) adminChartInstance.destroy();
+
+            let gradient = ctx.createLinearGradient(0, 0, 0, 300);
+            gradient.addColorStop(0, 'rgba(6, 182, 212, 0.4)'); 
+            gradient.addColorStop(1, 'rgba(6, 182, 212, 0.0)');
+
+            adminChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        borderColor: '#06b6d4', 
+                        backgroundColor: gradient,
+                        borderWidth: 3,
+                        pointBackgroundColor: '#06b6d4',
+                        pointBorderColor: '#121418',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        fill: true,
+                        tension: 0.4 
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { display: false, color: '#2A2E39' }, ticks: { color: '#6B7280', font: { size: 10, weight: 'bold' } } },
+                        y: { display: false, grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        // --- 9. GOOGLE MAPS API INTEGRATION ---
+        
+        // Single Equipment GPS Tracking Modal
+        function openGPSModal(eqId) {
+            const eq = equipmentData.find(e => e.id === eqId);
+            if(!eq) return;
+
+            document.getElementById('gps-modal-loc').innerText = `${eq.name} is at: ${eq.location}`;
+            document.getElementById('gps-modal').classList.remove('hide-section');
+
+            if (googleMapsLoaded) {
+                setTimeout(() => {
+                    const mapCenter = { lat: eq.mapCoords.lat, lng: eq.mapCoords.lng };
+                    const map = new google.maps.Map(document.getElementById('modal-single-map'), {
+                        zoom: 14,
+                        center: mapCenter,
+                        mapTypeId: 'satellite'
+                    });
+                    new google.maps.Marker({ position: mapCenter, map: map, title: eq.name });
+                }, 100);
+            } else {
+                document.getElementById('modal-single-map').innerHTML = `<div class="flex h-full items-center justify-center text-red-500 p-6 text-center">Google Maps API not loaded.<br><br>Did you add your API key at the bottom of the HTML file?</div>`;
+            }
+        }
+
+        function closeGPSModal() {
+            document.getElementById('gps-modal').classList.add('hide-section');
+        }
+
+        // Global Fleet Map Initialization
+        window.initMap = function() {
+            googleMapsLoaded = true;
+            // Maps will be rendered automatically when the user clicks the "Live Map" tabs
+        };
+
+        function initGoogleMap(mapType) {
+            if(!googleMapsLoaded) {
+                showToast("Please add your Google Maps API Key to the script tag at the bottom of the file.", "error");
+                return;
+            }
+
+            const containerId = mapType === 'owner' ? 'owner-map-container' : 'admin-map-container';
+            const mapElement = document.getElementById(containerId);
+            if(!mapElement) return;
+
+            // Coimbatore Center
+            const coimbatore = { lat: 11.0168, lng: 76.9558 };
+            
+            // Set styles so it matches Admin Dark Mode if viewed in Admin Panel
+            const mapStyles = mapType === 'admin' ? [
+                { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
+                { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
+                { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] }
+            ] : [];
+
+            const map = new google.maps.Map(mapElement, {
+                zoom: 11,
+                center: coimbatore,
+                mapTypeId: 'terrain',
+                styles: mapStyles
+            });
+
+            // Add markers for all equipment
+            equipmentData.forEach(eq => {
+                let iconUrl = "http://maps.google.com/mapfiles/ms/icons/green-dot.png"; 
+                if(eq.state === 'booked') iconUrl = "http://maps.google.com/mapfiles/ms/icons/orange-dot.png"; 
+                if(eq.state === 'broken') iconUrl = "http://maps.google.com/mapfiles/ms/icons/red-dot.png"; 
+
+                const marker = new google.maps.Marker({
+                    position: { lat: eq.mapCoords.lat, lng: eq.mapCoords.lng },
+                    map: map,
+                    title: eq.name,
+                    icon: iconUrl
+                });
+
+                const infoWindow = new google.maps.InfoWindow({
+                    content: `<div style="color: black; font-weight: bold; padding: 5px;">
+                                <div style="font-size: 14px; margin-bottom: 4px;">${eq.name}</div>
+                                <div style="font-size: 11px; color: gray;">${eq.location}</div>
+                                <div style="font-size: 11px; margin-top: 4px; color: ${eq.state === 'idle' ? 'green' : 'red'};">Status: ${eq.state.toUpperCase()}</div>
+                              </div>`
+                });
+
+                marker.addListener("click", () => {
+                    infoWindow.open(map, marker);
+                });
+            });
+        }
+    </script>
+
+    <!-- 
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      IMPORTANT GOOGLE MAPS API KEY REQUIRED HERE 
+      Replace YOUR_GOOGLE_MAPS_API_KEY with your actual key to remove watermark
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
+    -->
+    <script defer src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&callback=initMap"></script>
+
+</body>
+</html>
